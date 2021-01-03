@@ -21,6 +21,13 @@ impl CustomServiceAccount {
             tokens: RwLock::new(HashMap::new()),
         })
     }
+    pub async fn new_from_cred(cred: String) -> Result<Self, Error> {
+        let credentials = serde_json::from_str(&cred).map_err(Error::AplicationProfileFormat)?;
+        Ok(Self {
+            credentials,
+            tokens: RwLock::new(HashMap::new()),
+        })
+    }
 }
 
 #[async_trait]

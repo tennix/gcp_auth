@@ -12,7 +12,7 @@ pub enum Error {
     /// All authentication methods have been tested and none succeeded.
     /// Service account file can be donwloaded from GCP in json format.
     #[error("No available authentication method was discovered")]
-    NoAuthMethod(Box<Error>, Box<Error>, Box<Error>),
+    NoAuthMethod(Box<Error>, Box<Error>),
 
     /// Error in underlaying RustTLS library.
     /// Might signal problem with establishin secure connection using trusted certificates

@@ -77,17 +77,28 @@ use hyper_rustls::HttpsConnector;
 /// Initialize GCP authentication
 ///
 /// Returns `AuthenticationManager` which can be used to obtain tokens
-pub async fn init() -> Result<AuthenticationManager, Error> {
+pub async fn init(cred: Option<String>) -> Result<AuthenticationManager, Error> {
     let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
-    let custom = custom_service_account::CustomServiceAccount::new().await;
-    if let Ok(service_account) = custom {
-        return Ok(AuthenticationManager {
-            client,
-            service_account: Box::new(service_account),
-        });
+    if let Some(credentials) = cred {
+        return custom_service_account::CustomServiceAccount::new_from_cred(credentials)
+            .await
+            .map(|sa| AuthenticationManager {
+                client,
+                service_account: Box::new(sa),
+            });
     }
+
+    if let Ok(_) = std::env::var("GOOGLE_APPLICATION_CREDENTIALS") {
+        return custom_service_account::CustomServiceAccount::new()
+            .await
+            .map(|sa| AuthenticationManager {
+                client,
+                service_account: Box::new(sa),
+            });
+    }
+
     let default = default_service_account::DefaultServiceAccount::new(&client).await;
     if let Ok(service_account) = default {
         return Ok(AuthenticationManager {
@@ -103,7 +114,6 @@ pub async fn init() -> Result<AuthenticationManager, Error> {
         });
     }
     Err(Error::NoAuthMethod(
-        Box::new(custom.unwrap_err()),
         Box::new(default.unwrap_err()),
         Box::new(user.unwrap_err()),
     ))
